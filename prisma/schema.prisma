@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-model Clientes {
+model Cliente {
   Id                    Int        @id(map: "PK_Clientes") @default(autoincrement())
   TipoCliente           String
   Nome                  String
@@ -25,6 +25,8 @@ model Clientes {
   Observacoes           String?
   FotoPath              String?
   Endereco              Endereco[]
+
+  @@map("Clientes")
 }
 
 model Endereco {
@@ -39,7 +41,7 @@ model Endereco {
   UF           String?
   ClienteId    Int
   FornecedorId Int?
-  Clientes     Clientes    @relation(fields: [ClienteId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Endereco_Clientes_ClienteId")
+  Cliente      Cliente     @relation(fields: [ClienteId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Endereco_Clientes_ClienteId")
   Fornecedor   Fornecedor? @relation(fields: [FornecedorId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Endereco_Fornecedor_FornecedorId")
 
   @@index([ClienteId], map: "IX_Endereco_ClienteId")
@@ -120,14 +122,16 @@ model Funcionario {
   EnderecoFuncionario   EnderecoFuncionario[]
 }
 
-model Produtos {
-  Id               Int      @id(map: "PK_Produtos") @default(autoincrement())
-  Cod_Nome         String   @db.VarChar(100)
-  Cod_CodigoBarras String   @db.VarChar(50)
-  Cod_Preco        Decimal  @db.Decimal(10, 2)
+model Produto {
+  Id               Int         @id(map: "PK_Produtos") @default(autoincrement())
+  Cod_Nome         String      @db.VarChar(100)
+  Cod_CodigoBarras String      @db.VarChar(50)
+  Cod_Preco        Decimal     @db.Decimal(10, 2)
   Cod_Estoque      Int
   Ativo            Boolean
-  Vendas           Vendas[]
+  VendaItem        VendaItem[]
+
+  @@map("Produtos")
 }
 
 model Servicos {
@@ -161,15 +165,16 @@ model ValoresVenda {
   Lucro      Int
 }
 
-model Vendas {
+model VendaItem {
   Id         Int      @id(map: "PK_Vendas") @default(autoincrement())
   ProdutoId  Int
   Quantidade Int
   ValorTotal Decimal  @db.Decimal(18, 2)
   DataVenda  DateTime @db.Timestamptz(6)
-  Produtos   Produtos @relation(fields: [ProdutoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Vendas_Produtos_ProdutoId")
+  Produto    Produto  @relation(fields: [ProdutoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Vendas_Produtos_ProdutoId")
 
   @@index([ProdutoId], map: "IX_Vendas_ProdutoId")
+  @@map("Vendas")
 }
 
 model EFMigrationsHistory {
