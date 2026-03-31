@@ -41,7 +41,7 @@ export async function getResumoGeral() {
         totalVendas,
         totalClientes,
         totalProdutos,
-        totalFinanceiro: Number(totalFinanceiro._sum.Valor || 0)
+        totalFinanceiro: Number(totalFinanceiro._sum.Valor || 0),
       }
     };
   } catch (error) {
