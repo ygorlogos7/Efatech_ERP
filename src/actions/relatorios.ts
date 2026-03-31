@@ -30,9 +30,9 @@ export async function createLog(acao: string, modulo?: string, descricao?: strin
 // ---- Resumo Analítico (Exemplo para Relatórios) ----
 export async function getResumoGeral() {
   try {
-    const totalVendas = await prisma.venda.count();
-    const totalClientes = await prisma.cliente.count();
-    const totalProdutos = await prisma.produto.count();
+    const totalVendas = await prisma.vendas.count();
+    const totalClientes = await prisma.clientes.count();
+    const totalProdutos = await prisma.produtos.count();
     const totalFinanceiro = await prisma.contaReceber.aggregate({ _sum: { Valor: true } });
 
     return {
