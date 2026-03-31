@@ -17,12 +17,22 @@ export async function getContratos() {
 
 export async function createContrato(formData: FormData) {
   try {
+    // 1. Pegamos os valores brutos
+    const rawNumero = formData.get("Numero");
+    const rawValor = formData.get("ValorMensal");
+    const rawData = formData.get("DataInicio");
+    const rawObs = formData.get("Observacoes");
+
+    // 2. Montamos o objeto garantindo os tipos que o Prisma espera
     const data = {
-      Numero: Number(formData.get("Numero") || Math.floor(Math.random() * 10000)),
-      ValorMensal: Number(formData.get("ValorMensal") || 0),
-      DataInicio: new Date(formData.get("DataInicio") as string || new Date()),
+      // Se o erro diz que esperava String mas recebeu Number, 
+      // garantimos a String aqui:
+      Numero: rawNumero ? String(rawNumero) : String(Math.floor(Math.random() * 10000)),
+
+      ValorMensal: Number(rawValor) || 0,
+      DataInicio: rawData ? new Date(rawData as string) : new Date(),
       Ativo: true,
-      Observacoes: formData.get("Observacoes") as string | null,
+      Observacoes: rawObs ? String(rawObs) : null,
     };
 
     await prisma.contrato.create({ data });
@@ -31,6 +41,7 @@ export async function createContrato(formData: FormData) {
     console.error("Erro ao criar contrato:", error);
     return { success: false, error: "Falha ao gravar contrato no banco." };
   }
+
   const { redirect } = await import("next/navigation");
   redirect("/contratos/servicos");
 }
