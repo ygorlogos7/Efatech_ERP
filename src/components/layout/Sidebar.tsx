@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSidebar } from "@/components/providers/SidebarProvider";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import {
@@ -408,6 +409,7 @@ const MENU_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { isOpen } = useSidebar();
   // Store multiple open menus using their IDs
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({
     cadastros: true // Deixamos cadastros aberto por padrão na primeira visita
@@ -419,7 +421,10 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm shrink-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <aside className={cn(
+      "bg-white border-r border-gray-200 flex flex-col h-full shadow-sm shrink-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 ease-in-out z-20",
+      isOpen ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"
+    )}>
       {/* Sidebar specific top box */}
       <div className="h-[70px] bg-[#1a1c23] flex items-center justify-center p-4 m-3 rounded-md shadow-md gap-3">
         <Smartphone className="text-[var(--color-primary-green)] w-6 h-6" />

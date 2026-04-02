@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Clientes {
-  Id                    Int        @id(map: "PK_Clientes") @default(autoincrement())
+  Id                    Int             @id(map: "PK_Clientes") @default(autoincrement())
   TipoCliente           String
   Nome                  String
   Email                 String?
@@ -20,11 +20,13 @@ model Clientes {
   Fax                   String?
   Site                  String?
   VendedorResponsavel   String
-  LimiteCredito         Decimal?   @db.Decimal(18, 2)
+  LimiteCredito         Decimal?        @db.Decimal(18, 2)
   PermitirExcederLimite Boolean
   Observacoes           String?
   FotoPath              String?
   Endereco              Endereco[]
+  Vendas                Vendas[]
+  OrdensServico         OrdensServico[]
 }
 
 model Endereco {
@@ -121,13 +123,13 @@ model Funcionario {
 }
 
 model Produtos {
-  Id               Int      @id(map: "PK_Produtos") @default(autoincrement())
-  Cod_Nome         String   @db.VarChar(100)
-  Cod_CodigoBarras String   @db.VarChar(50)
-  Cod_Preco        Decimal  @db.Decimal(10, 2)
+  Id               Int          @id(map: "PK_Produtos") @default(autoincrement())
+  Cod_Nome         String       @db.VarChar(100)
+  Cod_CodigoBarras String       @db.VarChar(50)
+  Cod_Preco        Decimal      @db.Decimal(10, 2)
   Cod_Estoque      Int
   Ativo            Boolean
-  Vendas           Vendas[]
+  VendaItens       VendaItens[]
 }
 
 model Servicos {
@@ -147,7 +149,7 @@ model Servicos {
 }
 
 model Usuarios {
-  Id       Int    @id(map: "PK_Usuarios") @default(autoincrement())
+  Id       Int     @id(map: "PK_Usuarios") @default(autoincrement())
   Nome     String
   Email    String
   Senha    String
@@ -161,17 +163,6 @@ model ValoresVenda {
   Lucro      Int
 }
 
-model Vendas {
-  Id         Int      @id(map: "PK_Vendas") @default(autoincrement())
-  ProdutoId  Int
-  Quantidade Int
-  ValorTotal Decimal  @db.Decimal(18, 2)
-  DataVenda  DateTime @db.Timestamptz(6)
-  Produtos   Produtos @relation(fields: [ProdutoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Vendas_Produtos_ProdutoId")
-
-  @@index([ProdutoId], map: "IX_Vendas_ProdutoId")
-}
-
 model EFMigrationsHistory {
   MigrationId    String @id(map: "PK___EFMigrationsHistory") @db.VarChar(150)
   ProductVersion String @db.VarChar(32)
@@ -180,40 +171,40 @@ model EFMigrationsHistory {
 }
 
 model Transportadora {
-  Id                 Int      @id(map: "PK_Transportadora") @default(autoincrement())
-  Nome               String
-  CPFCNPJ            String?
-  Telefone           String?
-  TelefoneCelular    String?
-  Email              String?
-  Ativo              Boolean  @default(true)
-  Observacoes        String?
+  Id              Int     @id(map: "PK_Transportadora") @default(autoincrement())
+  Nome            String
+  CPFCNPJ         String?
+  Telefone        String?
+  TelefoneCelular String?
+  Email           String?
+  Ativo           Boolean @default(true)
+  Observacoes     String?
 }
 
 model ProdutoGrupo {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Ativo   Boolean @default(true)
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
 }
 
 model ProdutoUnidade {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Sigla   String
-  Ativo   Boolean @default(true)
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Sigla String
+  Ativo Boolean @default(true)
 }
 
 model ProdutoGrade {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Ativo   Boolean @default(true)
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
 }
 
 model ProdutoEtiqueta {
-  Id      Int     @id @default(autoincrement())
-  Nome    String
-  Codigo  String?
-  Ativo   Boolean @default(true)
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Codigo String?
+  Ativo  Boolean @default(true)
 }
 
 model Orcamento {
@@ -230,172 +221,72 @@ model Orcamento {
   Total         Decimal   @default(0)
   Ativo         Boolean   @default(true)
   CreatedAt     DateTime  @default(now())
-  UpdatedAt     DateTime  @updatedAt
+  UpdatedAt     DateTime  @default(now()) @updatedAt
 }
 
 model OrcamentoSituacao {
   Id    Int     @id @default(autoincrement())
   Nome  String
-  Cor   String? // ex: "#f59e0b" para badge colorido
+  Cor   String?
   Ativo Boolean @default(true)
 }
 
 model OrcamentoModeloEmail {
-  Id       Int     @id @default(autoincrement())
-  Nome     String
-  Assunto  String
-  Corpo    String  @db.Text
-  Ativo    Boolean @default(true)
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
 }
 
 model OrcamentoConfig {
-  Id                    Int     @id @default(autoincrement())
-  ValidadePadraoEmDias  Int     @default(30)
-  MensagemRodape        String?
-  NumeracaoAutomatica   Boolean @default(true)
-  EmailPadrao           String?
+  Id                   Int     @id @default(autoincrement())
+  ValidadePadraoEmDias Int     @default(30)
+  MensagemRodape       String?
+  NumeracaoAutomatica  Boolean @default(true)
+  EmailPadrao          String?
 }
 
-model OrdemServico {
-  Id            Int       @id @default(autoincrement())
-  Numero        Int       @unique @default(autoincrement())
-  DataAbertura  DateTime  @default(now())
-  DataPrevisao  DateTime?
-  DataFechamento DateTime?
-  ClienteId     Int?
-  TecnicoId     Int?
-  SituacaoId    Int?
-  Equipamento   String?
-  Defeito       String?
-  Solucao       String?
-  Observacoes   String?
-  Total         Decimal   @default(0)
-  Ativo         Boolean   @default(true)
-  CreatedAt     DateTime  @default(now())
-  UpdatedAt     DateTime  @updatedAt
-}
-
-model OrdemServicoSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
-model OrdemServicoModeloEmail {
-  Id       Int     @id @default(autoincrement())
-  Nome     String
-  Assunto  String
-  Corpo    String  @db.Text
-  Ativo    Boolean @default(true)
-}
-
-model OrdemServicoConfig {
-  Id                    Int     @id @default(autoincrement())
-  ValidadePadraoEmDias  Int     @default(7)
-  MensagemRodape        String?
-  NumeracaoAutomatica   Boolean @default(true)
-  EmailPadrao           String?
-}
-
-// ============ VENDAS ============
-
-model Venda {
-  Id            Int       @id @default(autoincrement())
-  Numero        Int       @unique @default(autoincrement())
-  Tipo          String    @default("produtos") // "produtos" | "balcao" | "servicos"
-  DataVenda     DateTime  @default(now())
-  ClienteId     Int?
-  SituacaoId    Int?
-  CanalId       Int?
-  TotalProdutos Decimal   @default(0)
-  TotalServicos Decimal   @default(0)
-  Desconto      Decimal   @default(0)
-  Total         Decimal   @default(0)
-  Observacoes   String?
-  Ativo         Boolean   @default(true)
-  CreatedAt     DateTime  @default(now())
-  UpdatedAt     DateTime  @updatedAt
-}
-
-model VendaSituacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
-model VendaCanal {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Ativo Boolean @default(true)
-}
-
-model VendaModeloEmail {
-  Id       Int     @id @default(autoincrement())
-  Nome     String
-  Assunto  String
-  Corpo    String  @db.Text
-  Ativo    Boolean @default(true)
-}
-
-model VendaBalanca {
-  Id           Int     @id @default(autoincrement())
-  Nome         String
-  Modelo       String?
-  Porta        String?
-  Ativo        Boolean @default(true)
-}
-
-model VendaConfig {
-  Id                  Int     @id @default(autoincrement())
-  MensagemRodape      String?
-  NumeracaoAutomatica Boolean @default(true)
-  EmailPadrao         String?
-  PermitirDesconto    Boolean @default(true)
-  DescontoMaximo      Decimal @default(100)
-}
-
-// ============ ESTOQUE ============
+// Removido modelo duplicado Vendas
 
 model EstoqueMovimentacao {
-  Id          Int      @id @default(autoincrement())
-  Tipo        String   // "entrada" | "saida"
-  ProdutoId   Int?
-  Quantidade  Decimal
-  Motivo      String?
-  Observacoes String?
-  DataMovimento DateTime @default(now())
-  CreatedAt   DateTime @default(now())
-}
-
-model EstoqueAjuste {
   Id            Int      @id @default(autoincrement())
+  Tipo          String
   ProdutoId     Int?
-  QuantidadeAnterior Decimal @default(0)
-  QuantidadeNova     Decimal @default(0)
+  Quantidade    Decimal
   Motivo        String?
   Observacoes   String?
-  DataAjuste    DateTime @default(now())
+  DataMovimento DateTime @default(now())
   CreatedAt     DateTime @default(now())
 }
 
+model EstoqueAjuste {
+  Id                 Int      @id @default(autoincrement())
+  ProdutoId          Int?
+  QuantidadeAnterior Decimal  @default(0)
+  QuantidadeNova     Decimal  @default(0)
+  Motivo             String?
+  Observacoes        String?
+  DataAjuste         DateTime @default(now())
+  CreatedAt          DateTime @default(now())
+}
+
 model EstoqueTransferencia {
-  Id           Int      @id @default(autoincrement())
-  ProdutoId    Int?
-  Quantidade   Decimal
-  LocalOrigem  String?
-  LocalDestino String?
-  Observacoes  String?
+  Id                Int      @id @default(autoincrement())
+  ProdutoId         Int?
+  Quantidade        Decimal
+  LocalOrigem       String?
+  LocalDestino      String?
+  Observacoes       String?
   DataTransferencia DateTime @default(now())
-  CreatedAt    DateTime @default(now())
+  CreatedAt         DateTime @default(now())
 }
 
 model EstoqueCotacao {
   Id           Int      @id @default(autoincrement())
   Numero       Int      @unique @default(autoincrement())
   FornecedorId Int?
-  Status       String   @default("pendente") // "pendente" | "aprovada" | "recusada"
+  Status       String   @default("pendente")
   Total        Decimal  @default(0)
   Observacoes  String?
   DataCotacao  DateTime @default(now())
@@ -429,14 +320,14 @@ model ComprasServicos {
 }
 
 model EstoqueTrocaDevolucao {
-  Id         Int      @id @default(autoincrement())
-  Tipo       String   // "troca" | "devolucao"
-  ProdutoId  Int?
-  Quantidade Decimal
-  Motivo     String?
-  Observacoes String?
+  Id             Int      @id @default(autoincrement())
+  Tipo           String
+  ProdutoId      Int?
+  Quantidade     Decimal
+  Motivo         String?
+  Observacoes    String?
   DataOcorrencia DateTime @default(now())
-  CreatedAt  DateTime @default(now())
+  CreatedAt      DateTime @default(now())
 }
 
 model EstoqueLocal {
@@ -452,10 +343,8 @@ model EstoqueSituacao {
   Ativo Boolean @default(true)
 }
 
-// ============ FINANCEIRO ============
-
 model ContaPagar {
-  Id            Int      @id @default(autoincrement())
+  Id            Int       @id @default(autoincrement())
   Descricao     String
   Valor         Decimal
   Vencimento    DateTime
@@ -467,12 +356,12 @@ model ContaPagar {
   FormaPgtoId   Int?
   CaixaId       Int?
   Observacoes   String?
-  CreatedAt     DateTime @default(now())
-  UpdatedAt     DateTime @updatedAt
+  CreatedAt     DateTime  @default(now())
+  UpdatedAt     DateTime  @updatedAt
 }
 
 model ContaReceber {
-  Id            Int      @id @default(autoincrement())
+  Id            Int       @id @default(autoincrement())
   Descricao     String
   Valor         Decimal
   Vencimento    DateTime
@@ -484,29 +373,29 @@ model ContaReceber {
   FormaPgtoId   Int?
   CaixaId       Int?
   Observacoes   String?
-  CreatedAt     DateTime @default(now())
-  UpdatedAt     DateTime @updatedAt
+  CreatedAt     DateTime  @default(now())
+  UpdatedAt     DateTime  @updatedAt
 }
 
 model Caixa {
-  Id          Int      @id @default(autoincrement())
-  Nome        String
-  SaldoInicial Decimal @default(0)
-  SaldoAtual   Decimal @default(0)
-  Ativo       Boolean  @default(true)
-  CreatedAt   DateTime @default(now())
+  Id           Int      @id @default(autoincrement())
+  Nome         String
+  SaldoInicial Decimal  @default(0)
+  SaldoAtual   Decimal  @default(0)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
 }
 
 model ContaBancaria {
-  Id          Int      @id @default(autoincrement())
-  Banco       String
-  Agencia     String?
-  Conta       String?
-  Titular     String?
-  SaldoInicial Decimal @default(0)
-  SaldoAtual   Decimal @default(0)
-  Ativo       Boolean  @default(true)
-  CreatedAt   DateTime @default(now())
+  Id           Int      @id @default(autoincrement())
+  Banco        String
+  Agencia      String?
+  Conta        String?
+  Titular      String?
+  SaldoInicial Decimal  @default(0)
+  SaldoAtual   Decimal  @default(0)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
 }
 
 model FormaPagamento {
@@ -518,7 +407,7 @@ model FormaPagamento {
 model PlanoConta {
   Id    Int     @id @default(autoincrement())
   Nome  String
-  Tipo  String  // "receita" | "despesa"
+  Tipo  String
   Ativo Boolean @default(true)
 }
 
@@ -536,102 +425,100 @@ model FinanceiroSituacao {
 }
 
 model TransferenciaFinanceira {
-  Id           Int      @id @default(autoincrement())
-  Valor        Decimal
-  OrigemId     Int      // ID do Caixa ou ContaBancaria
-  OrigemTipo   String   // "caixa" | "banco"
-  DestinoId    Int      // ID do Caixa ou ContaBancaria
-  DestinoTipo  String   // "caixa" | "banco"
-  Data         DateTime @default(now())
-  Observacoes  String?
-  CreatedAt    DateTime @default(now())
+  Id          Int      @id @default(autoincrement())
+  Valor       Decimal
+  OrigemId    Int
+  OrigemTipo  String
+  DestinoId   Int
+  DestinoTipo String
+  Data        DateTime @default(now())
+  Observacoes String?
+  CreatedAt   DateTime @default(now())
 }
 
 model BoletoBancario {
-  Id            Int      @id @default(autoincrement())
-  Numero        String
-  Vencimento    DateTime
-  Valor         Decimal
-  Status        String   @default("pendente") // "pendente" | "pago" | "vencido" | "cancelado"
+  Id             Int      @id @default(autoincrement())
+  Numero         String
+  Vencimento     DateTime
+  Valor          Decimal
+  Status         String   @default("pendente")
   ContaReceberId Int?
-  CreatedAt     DateTime @default(now())
+  CreatedAt      DateTime @default(now())
 }
 
 model TabelaRateio {
-  Id    Int    @id @default(autoincrement())
+  Id    Int     @id @default(autoincrement())
   Nome  String
   Ativo Boolean @default(true)
 }
 
 model FinanceiroConfig {
-  Id                  Int     @id @default(1)
-  MultaAtraso         Decimal @default(0)
-  JurosMensal         Decimal @default(0)
-  DiasProtesto        Int     @default(0)
-  InstrucoesCobranca  String?
+  Id                 Int     @id @default(1)
+  MultaAtraso        Decimal @default(0)
+  JurosMensal        Decimal @default(0)
+  DiasProtesto       Int     @default(0)
+  InstrucoesCobranca String?
 }
 
-// ============ NOTAS FISCAIS ============
-
 model NotaFiscal {
-  Id            Int      @id @default(autoincrement())
-  Numero        Int?
-  Serie         Int?
-  Chave         String?  @unique
-  Tipo          String   // "produto" (NFe) | "servico" (NFSe) | "consumidor" (NFCe)
-  Status        String   @default("pendente") // "pendente" | "autorizada" | "cancelada"
-  Destinatario  String?
-  ValorTotal    Decimal  @default(0)
-  DataEmissao   DateTime @default(now())
-  Xml           String?  @db.Text
-  CreatedAt     DateTime @default(now())
+  Id           Int      @id @default(autoincrement())
+  Numero       Int?
+  Serie        Int?
+  Chave        String?  @unique
+  Tipo         String
+  Status       String   @default("pendente")
+  Destinatario String?
+  ValorTotal   Decimal  @default(0)
+  DataEmissao  DateTime @default(now())
+  Xml          String?
+  CreatedAt    DateTime @default(now())
 }
 
 model NotaCompra {
-  Id            Int      @id @default(autoincrement())
-  Numero        Int?
-  Serie         Int?
-  Chave         String?  @unique
-  Fornecedor    String?
-  ValorTotal    Decimal  @default(0)
-  DataEmissao   DateTime?
-  DataEntrada   DateTime @default(now())
-  Xml           String?  @db.Text
-  CreatedAt     DateTime @default(now())
+  Id          Int       @id @default(autoincrement())
+  Numero      Int?
+  Serie       Int?
+  Chave       String?   @unique
+  Fornecedor  String?
+  ValorTotal  Decimal   @default(0)
+  DataEmissao DateTime?
+  DataEntrada DateTime  @default(now())
+  Xml         String?
+  CreatedAt   DateTime  @default(now())
 }
 
 model NaturezaOperacao {
   Id    Int     @id @default(autoincrement())
   Nome  String
   Cfop  String?
-  Tipo  String? // "entrada" | "saida"
+  Tipo  String?
   Ativo Boolean @default(true)
 }
 
 model Tributacao {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Icms  Decimal @default(0)
-  Ipi   Decimal @default(0)
-  Pis   Decimal @default(0)
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Icms   Decimal @default(0)
+  Ipi    Decimal @default(0)
+  Pis    Decimal @default(0)
   Cofins Decimal @default(0)
-  Ativo Boolean @default(true)
+  Ativo  Boolean @default(true)
 }
 
 model AtividadeServico {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Codigo String? // Codigo da prefeitura ou LC 116
-  Ativo Boolean @default(true)
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Codigo String?
+  Ativo  Boolean @default(true)
 }
 
 model CertificadoDigital {
-  Id        Int      @id @default(autoincrement())
+  Id        Int       @id @default(autoincrement())
   Nome      String?
   Validade  DateTime?
   Cnpj      String?
   Subject   String?
-  CreatedAt DateTime @default(now())
+  CreatedAt DateTime  @default(now())
 }
 
 model Intermediador {
@@ -642,80 +529,26 @@ model Intermediador {
 }
 
 model NotasConfig {
-  Id                Int     @id @default(1)
-  Ambiente          String  @default("homologacao") // "homologacao" | "producao"
-  SeriePadrao       Int     @default(1)
-  ProximoNumeroNFe  Int     @default(1)
-  ProximoNumeroNFSe Int     @default(1)
-  ProximoNumeroNFCe Int     @default(1)
+  Id                Int    @id @default(1)
+  Ambiente          String @default("homologacao")
+  SeriePadrao       Int    @default(1)
+  ProximoNumeroNFe  Int    @default(1)
+  ProximoNumeroNFSe Int    @default(1)
+  ProximoNumeroNFCe Int    @default(1)
 }
-
-// ============ CONTRATOS ============
-
-model Contratos {
-  Id            Int      @id @default(autoincrement())
-  Numero        String?
-  ClienteId     Int?
-  ValorMensal   Decimal  @default(0)
-  DiaVencimento Int      @default(10)
-  SituacaoId    Int?
-  DataInicio    DateTime @default(now())
-  DataFim       DateTime?
-  Observacoes   String?
-  CreatedAt     DateTime @default(now())
-}
-
-model Locacoes {
-  Id            Int      @id @default(autoincrement())
-  Descricao     String
-  ClienteId     Int?
-  ValorDiario   Decimal  @default(0)
-  DataInicio    DateTime @default(now())
-  DataFim       DateTime?
-  SituacaoId    Int?
-  CreatedAt     DateTime @default(now())
-}
-
-model Assinaturas {
-  Id          Int      @id @default(autoincrement())
-  Nome        String
-  ClienteId   Int?
-  Valor       Decimal  @default(0)
-  Plano       String?
-  Frequencia  String   @default("mensal")
-  DiaPagamento Int     @default(5)
-  Ativo       Boolean  @default(true)
-  CreatedAt   DateTime @default(now())
-}
-
-model ContratoSituacoes {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
-model LocacaoSituacoes {
-  Id    Int     @id @default(autoincrement())
-  Nome  String
-  Cor   String?
-  Ativo Boolean @default(true)
-}
-
-// ============ ATENDIMENTOS ============
 
 model Atendimento {
-  Id            Int      @id @default(autoincrement())
-  Assunto       String
-  ClienteId     Int?
-  Descricao     String?  @db.Text
-  SituacaoId    Int?
-  CategoriaId   Int?
-  CanalId       Int?
-  Prioridade    String   @default("media") // "baixa" | "media" | "alta"
-  DataAbertura  DateTime @default(now())
+  Id             Int       @id @default(autoincrement())
+  Assunto        String
+  ClienteId      Int?
+  Descricao      String?
+  SituacaoId     Int?
+  CategoriaId    Int?
+  CanalId        Int?
+  Prioridade     String    @default("media")
+  DataAbertura   DateTime  @default(now())
   DataFechamento DateTime?
-  CreatedAt     DateTime @default(now())
+  CreatedAt      DateTime  @default(now())
 }
 
 model AtendimentoCategoria {
@@ -740,59 +573,216 @@ model AtendimentoSituacao {
 model AtendimentoMensagem {
   Id            Int      @id @default(autoincrement())
   AtendimentoId Int
-  Conteudo      String   @db.Text
-  Origem        String   @default("sistema") // "cliente" | "sistema"
+  Conteudo      String
+  Origem        String   @default("sistema")
   Data          DateTime @default(now())
 }
 
-// ============ CONFIGURAÇÕES & EMPRESA ============
-
 model Empresa {
-  Id            Int      @id @default(1)
-  RazaoSocial   String
-  NomeFantasia  String?
-  Cnpj          String   @unique
+  Id                Int      @id @default(1)
+  RazaoSocial       String
+  NomeFantasia      String?
+  Cnpj              String   @unique
   InscricaoEstadual String?
-  Logradouro    String?
-  Numero        String?
-  Bairro        String?
-  Cidade        String?
-  Uf            String?
-  Cep           String?
-  Telefone      String?
-  Email         String?
-  LogoPath      String?
-  Cores         String?  // JSON string: { primary: "#...", secondary: "#..." }
-  CreatedAt     DateTime @default(now())
+  Logradouro        String?
+  Numero            String?
+  Bairro            String?
+  Cidade            String?
+  Uf                String?
+  Cep               String?
+  Telefone          String?
+  Email             String?
+  LogoPath          String?
+  Cores             String?
+  CreatedAt         DateTime @default(now())
 }
 
 model Plano {
-  Id            Int      @id @default(1)
-  Nome          String   @default("Gratuito")
+  Id            Int       @id @default(1)
+  Nome          String    @default("Gratuito")
   DataExpiracao DateTime?
-  Ativo         Boolean  @default(true)
+  Ativo         Boolean   @default(true)
 }
 
 model ConfigGeral {
-  Id            Int      @id @default(1)
-  NomeSistema   String   @default("Efatech ERP")
-  Moeda         String   @default("BRL")
-  Timezone      String   @default("America/Sao_Paulo")
+  Id          Int    @id @default(1)
+  NomeSistema String @default("Efatech ERP")
+  Moeda       String @default("BRL")
+  Timezone    String @default("America/Sao_Paulo")
 }
 
 model LogSistema {
-  Id            Int      @id @default(autoincrement())
-  Usuario       String?
-  Acao          String
-  Modulo        String?
-  Descricao     String?  @db.Text
-  Ip            String?
-  Data          DateTime @default(now())
+  Id        Int      @id @default(autoincrement())
+  Usuario   String?
+  Acao      String
+  Modulo    String?
+  Descricao String?
+  Ip        String?
+  Data      DateTime @default(now())
 }
 
+model Assinatura {
+  Id           Int      @id @default(autoincrement())
+  Nome         String
+  ClienteId    Int?
+  Valor        Decimal  @default(0)
+  Plano        String?
+  Frequencia   String   @default("mensal")
+  DiaPagamento Int      @default(5)
+  Ativo        Boolean  @default(true)
+  CreatedAt    DateTime @default(now())
+}
 
+model Contrato {
+  Id            Int       @id @default(autoincrement())
+  Numero        String?
+  ClienteId     Int?
+  ValorMensal   Decimal   @default(0)
+  DiaVencimento Int       @default(10)
+  SituacaoId    Int?
+  DataInicio    DateTime  @default(now())
+  DataFim       DateTime?
+  Observacoes   String?
+  CreatedAt     DateTime  @default(now())
+}
 
+model ContratoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
 
+model Locacao {
+  Id          Int       @id @default(autoincrement())
+  Descricao   String
+  ClienteId   Int?
+  ValorDiario Decimal   @default(0)
+  DataInicio  DateTime  @default(now())
+  DataFim     DateTime?
+  SituacaoId  Int?
+  CreatedAt   DateTime  @default(now())
+}
 
+model LocacaoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
 
+model OrdensServico {
+  Id                Int       @id @default(autoincrement())
+  Numero            Int       @unique @default(autoincrement())
+  DataAbertura      DateTime  @default(now())
+  DataPrevisao      DateTime?
+  DataFechamento    DateTime?
+  ClienteId         Int?
+  TecnicoId         Int?
+  SituacaoId        Int?
+  Equipamento       String?
+  Defeito           String?
+  Solucao           String?
+  Observacoes       String?
+  Total             Decimal   @default(0)
+  Ativo             Boolean   @default(true)
+  AssinaturaCliente String?
+  AssinaturaTecnico String?
+  CreatedAt         DateTime  @default(now())
+  UpdatedAt         DateTime  @updatedAt
 
+  Cliente           Clientes? @relation(fields: [ClienteId], references: [Id])
+}
+
+model OrdemServicoConfig {
+  Id                   Int     @id @default(autoincrement())
+  ValidadePadraoEmDias Int     @default(7)
+  MensagemRodape       String?
+  NumeracaoAutomatica  Boolean @default(true)
+  EmailPadrao          String?
+}
+
+model OrdemServicoModeloEmail {
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
+}
+
+model OrdemServicoSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}
+
+model Vendas {
+  Id                Int          @id @default(autoincrement())
+  Numero            Int          @unique @default(autoincrement())
+  Tipo              String       @default("produtos")
+  DataVenda         DateTime     @default(now())
+  ClienteId         Int?
+  SituacaoId        Int?
+  CanalId           Int?
+  TotalProdutos     Decimal      @default(0)
+  TotalServicos     Decimal      @default(0)
+  Desconto          Decimal      @default(0)
+  Total             Decimal      @default(0)
+  Observacoes       String?
+  AssinaturaCliente String?
+  Ativo             Boolean      @default(true)
+  CreatedAt         DateTime     @default(now())
+  UpdatedAt         DateTime     @updatedAt
+  Itens             VendaItens[]
+
+  Cliente           Clientes?    @relation(fields: [ClienteId], references: [Id])
+}
+
+model VendaItens {
+  Id         Int      @id @default(autoincrement())
+  VendaId    Int
+  ProdutoId  Int
+  Quantidade Decimal  @default(1)
+  ValorTotal Decimal  @default(0)
+  Vendas     Vendas   @relation(fields: [VendaId], references: [Id], onDelete: Cascade)
+  Produtos   Produtos @relation(fields: [ProdutoId], references: [Id])
+}
+
+model VendaBalanca {
+  Id     Int     @id @default(autoincrement())
+  Nome   String
+  Modelo String?
+  Porta  String?
+  Ativo  Boolean @default(true)
+}
+
+model VendaCanal {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Ativo Boolean @default(true)
+}
+
+model VendaConfig {
+  Id                  Int     @id @default(autoincrement())
+  MensagemRodape      String?
+  NumeracaoAutomatica Boolean @default(true)
+  EmailPadrao         String?
+  PermitirDesconto    Boolean @default(true)
+  DescontoMaximo      Decimal @default(100)
+}
+
+model VendaModeloEmail {
+  Id      Int     @id @default(autoincrement())
+  Nome    String
+  Assunto String
+  Corpo   String
+  Ativo   Boolean @default(true)
+}
+
+model VendaSituacao {
+  Id    Int     @id @default(autoincrement())
+  Nome  String
+  Cor   String?
+  Ativo Boolean @default(true)
+}

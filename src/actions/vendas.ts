@@ -18,7 +18,7 @@ const toNum = (v: any) => ({
 // --- Vendas ---
 export async function getVendas(tipo?: string) {
   try {
-    const items = await prisma.venda.findMany({
+    const items = await prisma.vendas.findMany({
       where: tipo ? { Tipo: tipo } : {},
       orderBy: { CreatedAt: "desc" },
     });
@@ -30,8 +30,30 @@ export async function getVendas(tipo?: string) {
 
 export async function getVendaById(id: number) {
   try {
-    const item = await prisma.venda.findUnique({ where: { Id: id } });
-    if (item) return { success: true, data: toNum(item) };
+    const item = await prisma.vendas.findUnique({
+      where: { Id: id },
+      include: {
+        Cliente: true,
+        Itens: {
+          include: {
+            Produtos: true
+          }
+        }
+      }
+    });
+
+    if (item) {
+      return {
+        success: true,
+        data: {
+          ...toNum(item),
+          Itens: item.Itens.map(i => ({
+            ...i,
+            ValorTotal: Number(i.ValorTotal)
+          }))
+        }
+      };
+    }
     return { success: false, error: "Venda não encontrada." };
   } catch (error) {
     return { success: false, error: "Falha na leitura." };
@@ -41,30 +63,45 @@ export async function getVendaById(id: number) {
 export async function createVenda(tipo: string, formData: FormData) {
   try {
     const total = Number(formData.get("Total") || 0);
-    await prisma.venda.create({
+    const clienteId = formData.get("ClienteId") ? Number(formData.get("ClienteId")) : null;
+    const itensJson = formData.get("Itens") as string;
+    const itens = itensJson ? JSON.parse(itensJson) : [];
+
+    const venda = await prisma.vendas.create({
       data: {
         Tipo: tipo,
+        ClienteId: clienteId,
         TotalProdutos: Number(formData.get("TotalProdutos") || 0),
         TotalServicos: Number(formData.get("TotalServicos") || 0),
         Desconto: Number(formData.get("Desconto") || 0),
         Total: total,
         Observacoes: formData.get("Observacoes") as string | null,
-        Ativo: formData.get("Ativo") !== "false",
+        AssinaturaCliente: formData.get("AssinaturaCliente") as string | null,
+        Ativo: true,
+        Itens: {
+          create: itens.map((item: any) => ({
+            ProdutoId: Number(item.ProdutoId),
+            Quantidade: Number(item.Quantidade),
+            ValorTotal: Number(item.ValorTotal),
+          }))
+        }
       },
     });
-    await logAction("Criar Venda", MODULO, `Nova venda de ${tipo} registrada no valor de R$ ${total.toFixed(2)}.`);
+
+    await logAction("Criar Venda", MODULO, `Nova venda #${venda.Numero} (${tipo}) registrada no valor de R$ ${total.toFixed(2)}.`);
     revalidatePath(`/vendas/${tipo}`);
+    return { success: true, data: venda };
   } catch (error) {
+    console.error("Erro ao criar venda:", error);
     await logAction("Criar Venda", MODULO, `Falha ao registrar venda de ${tipo}: ${error}`, "ERRO");
     return { success: false, error: "Falha ao criar venda." };
   }
-  redirect(`/vendas/${tipo}`);
 }
 
 export async function updateVenda(id: number, tipo: string, formData: FormData) {
   try {
     const total = Number(formData.get("Total") || 0);
-    await prisma.venda.update({
+    await prisma.vendas.update({
       where: { Id: id },
       data: {
         TotalProdutos: Number(formData.get("TotalProdutos") || 0),
@@ -86,7 +123,7 @@ export async function updateVenda(id: number, tipo: string, formData: FormData) 
 
 export async function deleteVenda(id: number, tipo: string) {
   try {
-    await prisma.venda.delete({ where: { Id: id } });
+    await prisma.vendas.delete({ where: { Id: id } });
     await logAction("Deletar Venda", MODULO, `Venda ID: ${id} removida pelo usuário.`);
     revalidatePath(`/vendas/${tipo}`);
     return { success: true };
@@ -99,7 +136,7 @@ export async function deleteVenda(id: number, tipo: string) {
 // --- Situações ---
 export async function getVendaSituacoes() {
   try {
-    const items = await prisma.vendaSituacao.findMany({ orderBy: { Nome: "asc" } });
+    const items = await prisma.vendaSituacoes.findMany({ orderBy: { Nome: "asc" } });
     return { success: true, data: items };
   } catch (error) {
     return { success: false, error: "Falha ao buscar situações." };
@@ -108,7 +145,7 @@ export async function getVendaSituacoes() {
 
 export async function createVendaSituacao(formData: FormData) {
   try {
-    await prisma.vendaSituacao.create({
+    await prisma.vendaSituacoes.create({
       data: { Nome: formData.get("Nome") as string, Cor: (formData.get("Cor") as string) || null, Ativo: true },
     });
     revalidatePath("/vendas/opcoes/situacoes");
@@ -121,7 +158,7 @@ export async function createVendaSituacao(formData: FormData) {
 // --- Canais ---
 export async function getVendaCanais() {
   try {
-    const items = await prisma.vendaCanal.findMany({ orderBy: { Nome: "asc" } });
+    const items = await prisma.vendaCanais.findMany({ orderBy: { Nome: "asc" } });
     return { success: true, data: items };
   } catch (error) {
     return { success: false, error: "Falha ao buscar canais." };
@@ -130,7 +167,7 @@ export async function getVendaCanais() {
 
 export async function createVendaCanal(formData: FormData) {
   try {
-    await prisma.vendaCanal.create({
+    await prisma.vendaCanais.create({
       data: { Nome: formData.get("Nome") as string, Ativo: true },
     });
     revalidatePath("/vendas/opcoes/canais");
@@ -143,7 +180,7 @@ export async function createVendaCanal(formData: FormData) {
 // --- Modelos de Email ---
 export async function getVendaModelosEmail() {
   try {
-    const items = await prisma.vendaModeloEmail.findMany({ orderBy: { Nome: "asc" } });
+    const items = await prisma.vendaModelosEmail.findMany({ orderBy: { Nome: "asc" } });
     return { success: true, data: items };
   } catch (error) {
     return { success: false, error: "Falha ao buscar modelos." };
@@ -152,7 +189,7 @@ export async function getVendaModelosEmail() {
 
 export async function createVendaModeloEmail(formData: FormData) {
   try {
-    await prisma.vendaModeloEmail.create({
+    await prisma.vendaModelosEmail.create({
       data: {
         Nome: formData.get("Nome") as string,
         Assunto: formData.get("Assunto") as string,
@@ -170,7 +207,7 @@ export async function createVendaModeloEmail(formData: FormData) {
 // --- Balanças ---
 export async function getVendaBalancas() {
   try {
-    const items = await prisma.vendaBalanca.findMany({ orderBy: { Nome: "asc" } });
+    const items = await prisma.vendaBalancas.findMany({ orderBy: { Nome: "asc" } });
     return { success: true, data: items };
   } catch (error) {
     return { success: false, error: "Falha ao buscar balanças." };
@@ -179,7 +216,7 @@ export async function getVendaBalancas() {
 
 export async function createVendaBalanca(formData: FormData) {
   try {
-    await prisma.vendaBalanca.create({
+    await prisma.vendaBalancas.create({
       data: {
         Nome: formData.get("Nome") as string,
         Modelo: (formData.get("Modelo") as string) || null,
@@ -197,7 +234,7 @@ export async function createVendaBalanca(formData: FormData) {
 // --- Config ---
 export async function getVendaConfig() {
   try {
-    const config = await prisma.vendaConfig.findFirst();
+    const config = await prisma.vendaConfigs.findFirst();
     return {
       success: true,
       data: config ? { ...config, DescontoMaximo: Number(config.DescontoMaximo) } : config,
@@ -216,11 +253,11 @@ export async function saveVendaConfig(formData: FormData) {
       PermitirDesconto: formData.get("PermitirDesconto") === "true",
       DescontoMaximo: Number(formData.get("DescontoMaximo") || 100),
     };
-    const existing = await prisma.vendaConfig.findFirst();
+    const existing = await prisma.vendaConfigs.findFirst();
     if (existing) {
-      await prisma.vendaConfig.update({ where: { Id: existing.Id }, data });
+      await prisma.vendaConfigs.update({ where: { Id: existing.Id }, data });
     } else {
-      await prisma.vendaConfig.create({ data });
+      await prisma.vendaConfigs.create({ data });
     }
     revalidatePath("/vendas/opcoes/configuracoes");
     return { success: true };

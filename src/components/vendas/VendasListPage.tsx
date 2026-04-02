@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { PlusCircle, Edit2, Eye, ShoppingBasket } from "lucide-react";
+import { PlusCircle, Edit2, Eye, ShoppingBasket, Printer } from "lucide-react";
 import { getVendas } from "@/actions/vendas";
 import { DeleteVendaButton } from "@/components/forms/DeleteVendaButton";
 
@@ -33,7 +33,7 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
               <th className="py-3 px-4 text-right">Desconto</th>
               <th className="py-3 px-4 text-right font-bold">Total</th>
               <th className="py-3 px-4 text-center">Status</th>
-              <th className="py-3 px-4 text-right w-[120px]">Ações</th>
+              <th className="py-3 px-4 text-right w-[140px]">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -59,7 +59,10 @@ export async function VendasListPage({ tipo, title }: VendasListPageProps) {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1">
+                      <Link href={`/vendas/${tipo}/print/${item.Id}`} className="p-1.5 text-gray-600 hover:text-black border border-gray-200 rounded hover:bg-gray-50 transition-colors" title="Imprimir Cupom">
+                        <Printer className="w-4 h-4" />
+                      </Link>
                       <Link href={`/vendas/${tipo}/preview/${item.Id}`} className="p-1.5 text-blue-400 hover:text-blue-600 border border-blue-200 rounded hover:bg-blue-50 transition-colors" title="Visualizar">
                         <Eye className="w-4 h-4" />
                       </Link>
